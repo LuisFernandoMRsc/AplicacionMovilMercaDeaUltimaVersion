@@ -5,6 +5,6 @@ class GraphQLConfig {
     'GRAPHQL_ENDPOINT',
     defaultValue: 'http://10.0.2.2:5253/graphql',
   );
-
+  //http://10.0.2.2:5253
   static const Duration timeout = Duration(seconds: 25);
 }

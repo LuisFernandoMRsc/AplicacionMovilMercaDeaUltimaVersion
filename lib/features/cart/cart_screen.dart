@@ -55,8 +55,12 @@ class _CartScreenState extends State<CartScreen> {
       );
     } on Exception catch (e) {
       if (!mounted) return;
+      final message = e.toString();
+      const propioProductoMsg = 'No puedes comprar tus propios productos.';
+      final displayMessage =
+          message.contains(propioProductoMsg) ? propioProductoMsg : message;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$e')));
+          .showSnackBar(SnackBar(content: Text(displayMessage)));
     }
   }
 

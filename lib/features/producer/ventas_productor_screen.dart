@@ -58,19 +58,42 @@ class _VentasProductorScreenState extends State<VentasProductorScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ExpansionTile(
                     title: Text(formatMoney(venta.montoTotal)),
-                    subtitle: Text('Fecha: ${formatDate(venta.fecha)}'),
-                    trailing: venta.estaSolicitada
-                        ? FilledButton(
-                            onPressed: ventasProvider.isLoadingProductor
-                                ? null
-                                : () => ventasProvider.aceptarVenta(venta.id),
-                            child: const Text('Aceptar'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Fecha: ${formatDate(venta.fecha)}'),
+                        const SizedBox(height: 4),
+                        if (venta.estaSolicitada)
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FilledButton(
+                                onPressed: ventasProvider.isLoadingProductor
+                                    ? null
+                                    : () => ventasProvider.aceptarVenta(venta.id),
+                                child: const Text('Aceptar'),
+                              ),
+                              OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red.shade700,
+                                ),
+                                onPressed: ventasProvider.isLoadingProductor
+                                    ? null
+                                    : () => ventasProvider.denegarVentaProductor(venta.id),
+                                child: const Text('Denegar'),
+                              ),
+                            ],
                           )
-                        : Chip(
-                            label: Text(statusLabel),
+                        else
+                          Chip(
+                            label: Text(statusLabel, textAlign: TextAlign.start),
                             avatar: Icon(statusIcon, color: statusColor, size: 18),
                             backgroundColor: statusColor.withOpacity(0.15),
                           ),
+                      ],
+                    ),
+                    trailing: null,
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -89,6 +112,17 @@ class _VentasProductorScreenState extends State<VentasProductorScreen> {
                                   .bodySmall
                                   ?.copyWith(color: Colors.grey.shade700),
                             ),
+                            if ((venta.telefonoComprobador ?? '').isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  'Teléfono comprobador: ${venta.telefonoComprobador}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: Colors.grey.shade700),
+                                ),
+                              ),
                             const SizedBox(height: 12),
                             Text(
                               'Detalle de productos',
@@ -123,12 +157,14 @@ class _VentasProductorScreenState extends State<VentasProductorScreen> {
 }
 
 Color _statusColor(VentaModel venta) {
+  if (venta.estaDenegada) return Colors.red.shade700;
   if (venta.estaCompletada) return Colors.green.shade700;
   if (venta.estaAceptadaEnRevision) return Colors.blue.shade700;
   return Colors.orange.shade700;
 }
 
 IconData _statusIcon(VentaModel venta) {
+  if (venta.estaDenegada) return Icons.report;
   if (venta.estaCompletada) return Icons.task_alt;
   if (venta.estaAceptadaEnRevision) return Icons.fact_check;
   return Icons.schedule;

@@ -67,6 +67,20 @@ class VentaProvider extends ChangeNotifier {
     _setLoadingProductor(true);
     try {
       await _ventaRepository.aceptarVenta(ventaId: ventaId);
+      _errorProductor = null;
+      await loadVentasProductor(refresh: true);
+    } on GraphQLFailure catch (e) {
+      _errorProductor = e.message;
+    } finally {
+      _setLoadingProductor(false);
+    }
+  }
+
+  Future<void> denegarVentaProductor(String ventaId) async {
+    _setLoadingProductor(true);
+    try {
+      await _ventaRepository.denegarVentaProductor(ventaId: ventaId);
+      _errorProductor = null;
       await loadVentasProductor(refresh: true);
     } on GraphQLFailure catch (e) {
       _errorProductor = e.message;

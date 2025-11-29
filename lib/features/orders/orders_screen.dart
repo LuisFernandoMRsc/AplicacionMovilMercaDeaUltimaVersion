@@ -82,6 +82,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   .bodySmall
                                   ?.copyWith(color: Colors.grey.shade700),
                             ),
+                            if ((venta.telefonoComprobador ?? '').isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  'Teléfono comprobador: ${venta.telefonoComprobador}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: Colors.grey.shade700),
+                                ),
+                              ),
                             const SizedBox(height: 8),
                             for (final detalle in venta.detalles)
                               ListTile(
@@ -106,12 +117,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
 }
 
 Color _statusColor(VentaModel venta) {
+  if (venta.estaDenegada) return Colors.red.shade700;
   if (venta.estaCompletada) return Colors.green.shade700;
   if (venta.estaAceptadaEnRevision) return Colors.blue.shade700;
   return Colors.orange.shade700;
 }
 
 IconData _statusIcon(VentaModel venta) {
+  if (venta.estaDenegada) return Icons.report;
   if (venta.estaCompletada) return Icons.task_alt;
   if (venta.estaAceptadaEnRevision) return Icons.fact_check;
   return Icons.pending_outlined;

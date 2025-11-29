@@ -17,6 +17,7 @@ class VentaRepository {
           montoTotal
           numeroTransaccion
           estado
+          telefonoComprobador
           detalles {
             productoId
             nombreProducto
@@ -51,6 +52,7 @@ class VentaRepository {
           montoTotal
           numeroTransaccion
           estado
+          telefonoComprobador
           detalles {
             productoId
             nombreProducto
@@ -94,6 +96,7 @@ class VentaRepository {
           montoTotal
           numeroTransaccion
           estado
+          telefonoComprobador
           detalles {
             productoId
             nombreProducto
@@ -118,6 +121,26 @@ class VentaRepository {
     const mutation = r'''
       mutation AceptarVenta($idVenta: String!) {
         aceptarVenta(idVenta: $idVenta) {
+          id
+          estado
+        }
+      }
+    ''';
+
+    await _service.mutate(
+      document: mutation,
+      variables: {
+        'idVenta': ventaId,
+      },
+    );
+  }
+
+  Future<void> denegarVentaProductor({
+    required String ventaId,
+  }) async {
+    const mutation = r'''
+      mutation DenegarVentaProductor($idVenta: String!) {
+        denegarVentaProductor(idVenta: $idVenta) {
           id
           estado
         }

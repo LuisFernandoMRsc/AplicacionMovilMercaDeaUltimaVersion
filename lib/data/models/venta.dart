@@ -10,6 +10,7 @@ class VentaModel {
     required this.numeroTransaccion,
     required this.estado,
     required this.detalles,
+    this.telefonoComprobador,
   });
 
   final String id;
@@ -20,11 +21,15 @@ class VentaModel {
   final String numeroTransaccion;
   final String estado;
   final List<DetalleVentaModel> detalles;
+  final String? telefonoComprobador;
 
   String get estadoNormalizado => estado.toLowerCase();
   bool get estaSolicitada => estadoNormalizado == VentaStatus.solicitada;
   bool get estaAceptadaEnRevision => estadoNormalizado == VentaStatus.aceptadaRevision;
   bool get estaCompletada => estadoNormalizado == VentaStatus.completadaRevisionAceptada;
+  bool get estaDenegadaSupervisor => estadoNormalizado == VentaStatus.denegadaSupervisor;
+  bool get estaDenegadaProductor => estadoNormalizado == VentaStatus.denegadaProductor;
+  bool get estaDenegada => estaDenegadaSupervisor || estaDenegadaProductor;
 
   factory VentaModel.fromJson(Map<String, dynamic> json) {
     final detallesJson = json['detalles'] as List<dynamic>? ?? const [];
@@ -39,6 +44,7 @@ class VentaModel {
       detalles: detallesJson
           .map((e) => DetalleVentaModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      telefonoComprobador: json['telefonoComprobador'] as String?,
     );
   }
 }
@@ -47,10 +53,16 @@ class VentaStatus {
   static const solicitada = 'solicitada';
   static const aceptadaRevision = 'aceptada-en revision';
   static const completadaRevisionAceptada = 'completada-revision aceptada';
+  static const denegadaSupervisor = 'venta denegada, contactese con el supervisor';
+  static const denegadaProductor = 'venta denegada por el productor';
 
   static String label(String value) {
     final normalized = value.toLowerCase();
     switch (normalized) {
+      case denegadaProductor:
+        return 'Venta denegada por el productor';
+      case denegadaSupervisor:
+        return 'Venta denegada, contacte con el supervisor';
       case aceptadaRevision:
         return 'Aceptada - en revisión';
       case completadaRevisionAceptada:
