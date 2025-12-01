@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/models/comprobador.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/venta_provider.dart';
 import '../../utils/formatters.dart';
@@ -42,11 +41,8 @@ class _CartScreenState extends State<CartScreen> {
       final numeroTx = await _requestTransactionNumber(context, cart);
       if (numeroTx == null) return;
       cart.setNumeroTransaccion(numeroTx);
-      final comprobador = await _pickComprobador(context);
-      if (comprobador == null) return;
       await ventas.crearVenta(
         cart: cart,
-        comprobadorId: comprobador.id,
         numeroTransaccion: numeroTx,
       );
       if (!mounted) return;
@@ -78,38 +74,6 @@ class _CartScreenState extends State<CartScreen> {
           cuenta: _cuentaEmpresa,
         );
       },
-    );
-  }
-
-  Future<ComprobadorModel?> _pickComprobador(BuildContext context) async {
-    final ventas = context.read<VentaProvider>();
-    final disponibles = await ventas.comprobadoresDisponibles();
-    if (disponibles.isEmpty && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay comprobadores disponibles.')),
-      );
-      return null;
-    }
-
-    if (!mounted) return null;
-
-    return showModalBottomSheet<ComprobadorModel>(
-      context: context,
-      builder: (_) => ListView(
-        children: [
-          const ListTile(
-            title: Text('Selecciona un comprobador'),
-            subtitle: Text('Solo se muestran quienes tienen cupos disponibles'),
-          ),
-          for (final comp in disponibles)
-            ListTile(
-              leading: const Icon(Icons.verified_user_outlined),
-              title: Text(comp.nombreUsuario),
-              subtitle: Text('Cupos disponibles: ${comp.cuposDisponibles}'),
-              onTap: () => Navigator.of(context).pop(comp),
-            ),
-        ],
-      ),
     );
   }
 

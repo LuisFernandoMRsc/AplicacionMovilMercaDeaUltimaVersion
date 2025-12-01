@@ -38,7 +38,6 @@ class VentaRepository {
 
   Future<VentaModel> crearVenta({
     required String productorId,
-    required String comprobadorId,
     required String numeroTransaccion,
     required List<Map<String, dynamic>> detalles,
   }) async {
@@ -69,7 +68,6 @@ class VentaRepository {
       variables: {
         'input': {
           'productorId': productorId,
-          'comprobadorId': comprobadorId,
           'numeroTransaccion': numeroTransaccion,
           'detalles': detalles,
         },

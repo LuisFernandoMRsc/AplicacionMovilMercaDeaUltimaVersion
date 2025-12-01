@@ -4,7 +4,7 @@ class VentaModel {
   const VentaModel({
     required this.id,
     required this.productorId,
-    required this.comprobadorId,
+    this.comprobadorId,
     required this.fecha,
     required this.montoTotal,
     required this.numeroTransaccion,
@@ -15,7 +15,7 @@ class VentaModel {
 
   final String id;
   final String productorId;
-  final String comprobadorId;
+  final String? comprobadorId;
   final DateTime fecha;
   final double montoTotal;
   final String numeroTransaccion;
@@ -36,7 +36,7 @@ class VentaModel {
     return VentaModel(
       id: json['id'] as String? ?? '',
       productorId: json['productorId'] as String? ?? '',
-      comprobadorId: json['comprobadorId'] as String? ?? '',
+      comprobadorId: json['comprobadorId'] as String?,
       fecha: DateTime.tryParse(json['fecha'] as String? ?? '') ?? DateTime.now(),
       montoTotal: (json['montoTotal'] as num?)?.toDouble() ?? 0,
       numeroTransaccion: json['numeroTransaccion'] as String? ?? '',

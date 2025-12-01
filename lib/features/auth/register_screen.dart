@@ -55,7 +55,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (error) {
       if (!mounted) return;
-      _showToast('Error inesperado: ${error.toString()}');
+      final message = auth.errorMessage ?? error.toString();
+      _showToast(message);
     }
   }
 

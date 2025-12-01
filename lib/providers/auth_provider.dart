@@ -67,7 +67,7 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       return true;
     } on GraphQLFailure catch (e) {
-      _error = e.message;
+      _error = _mapearErrorRegistro(e.message);
       return false;
     } finally {
       _setLoading(false);
@@ -151,9 +151,26 @@ class AuthProvider extends ChangeNotifier {
   String _mapearErrorCredenciales(String message) {
     final normalized = message.toLowerCase();
     if (normalized.contains('usuario no encontrado') ||
-        normalized.contains('contraseña incorrecta')) {
-      return 'Correo o contraseña incorrecta.';
+        normalized.contains('contraseña incorrecta') ||
+        normalized.contains('correo o contraseña incorrectos') ||
+        normalized.contains('unexpected execution error')) {
+      return 'Correo o contraseña incorrectos.';
     }
+    return message;
+  }
+
+  String _mapearErrorRegistro(String message) {
+    final normalized = message.toLowerCase();
+    if (normalized.contains('usuario_duplicado') ||
+        normalized.contains('correo o teléfono') ||
+        normalized.contains('correo ya está en uso')) {
+      return 'Este correo ya está en uso.';
+    }
+
+    if (normalized.contains('unexpected execution error')) {
+      return 'No pudimos crear la cuenta. Intenta nuevamente en unos minutos.';
+    }
+
     return message;
   }
 }

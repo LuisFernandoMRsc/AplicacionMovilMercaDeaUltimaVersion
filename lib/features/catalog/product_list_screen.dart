@@ -17,7 +17,7 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
-  String _producerFilter = '';
+  String _searchFilter = '';
 
   @override
   void initState() {
@@ -45,12 +45,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
     return TextField(
       controller: _searchCtrl,
       decoration: const InputDecoration(
-        hintText: 'Buscar por productor',
+        hintText: 'Buscar por producto o productor',
         prefixIcon: Icon(Icons.search),
         border: OutlineInputBorder(),
       ),
       onChanged: (value) {
-        setState(() => _producerFilter = value.trim().toLowerCase());
+        setState(() => _searchFilter = value.trim().toLowerCase());
       },
     );
   }
@@ -74,10 +74,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
           }
 
           final productosFiltrados = catalog.productos.where((producto) {
-            if (_producerFilter.isEmpty) return true;
+            if (_searchFilter.isEmpty) return true;
+
+            final nombreProducto = producto.nombre.toLowerCase();
             final productor = catalog.productores[producto.productorId];
-            final nombre = productor?.nombreUsuario ?? '';
-            return nombre.toLowerCase().contains(_producerFilter);
+            final nombreProductor = (productor?.nombreUsuario ?? '').toLowerCase();
+
+            return nombreProducto.contains(_searchFilter) ||
+                nombreProductor.contains(_searchFilter);
           }).toList();
 
           return RefreshIndicator(
@@ -94,7 +98,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
                 if (productosFiltrados.isEmpty) {
                   return const EmptyView(
-                    message: 'No se encontraron productos para ese productor.',
+                    message: 'No se encontraron coincidencias.',
                   );
                 }
 

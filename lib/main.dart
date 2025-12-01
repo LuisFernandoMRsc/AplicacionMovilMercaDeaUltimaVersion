@@ -50,7 +50,7 @@ class _AppScope extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CatalogProvider(catalogRepository)),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(
-          create: (_) => VentaProvider(ventaRepository, catalogRepository),
+          create: (_) => VentaProvider(ventaRepository),
         ),
       ],
       child: const MercaDeaApp(),

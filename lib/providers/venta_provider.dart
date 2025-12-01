@@ -1,17 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/graphql_service.dart';
-import '../data/models/comprobador.dart';
 import '../data/models/venta.dart';
-import '../data/repositories/catalog_repository.dart';
 import '../data/repositories/venta_repository.dart';
 import 'cart_provider.dart';
 
 class VentaProvider extends ChangeNotifier {
-  VentaProvider(this._ventaRepository, this._catalogRepository);
+  VentaProvider(this._ventaRepository);
 
   final VentaRepository _ventaRepository;
-  final CatalogRepository _catalogRepository;
 
   List<VentaModel> _ventas = const [];
   List<VentaModel> _ventasProductor = const [];
@@ -91,7 +88,6 @@ class VentaProvider extends ChangeNotifier {
 
   Future<VentaModel?> crearVenta({
     required CartProvider cart,
-    required String comprobadorId,
     required String numeroTransaccion,
   }) async {
     if (!cart.canCheckout) {
@@ -104,7 +100,6 @@ class VentaProvider extends ChangeNotifier {
     try {
       final venta = await _ventaRepository.crearVenta(
         productorId: cart.productorId!,
-        comprobadorId: comprobadorId,
         numeroTransaccion: numeroTransaccion.trim(),
         detalles: cart.toDetalleInput(),
       );
@@ -118,13 +113,6 @@ class VentaProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
-  }
-
-  Future<List<ComprobadorModel>> comprobadoresDisponibles() async {
-    final comprobadores = await _catalogRepository.fetchComprobadores();
-    return comprobadores
-        .where((c) => c.estaDisponible && c.tieneCupos)
-        .toList();
   }
 
   void _setLoading(bool value) {

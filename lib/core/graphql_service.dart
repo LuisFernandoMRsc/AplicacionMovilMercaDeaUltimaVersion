@@ -84,16 +84,55 @@ class GraphQLService {
     }
 
     if (exception.graphqlErrors.isNotEmpty) {
-      final message = exception.graphqlErrors
-          .map((e) => e.message)
-          .where((m) => m.trim().isNotEmpty)
-          .join('. ');
-      throw GraphQLFailure(message);
+      final messages = exception.graphqlErrors
+          .map((error) => _extractGraphQLErrorMessage(error))
+          .where((m) => m != null && m!.trim().isNotEmpty)
+          .map((m) => m!.trim())
+          .toList();
+
+      if (messages.isNotEmpty) {
+        throw GraphQLFailure(messages.join('. '));
+      }
     }
 
     final linkMessage = exception.linkException?.originalException?.toString() ??
         exception.linkException?.toString() ??
         'No fue posible comunicarse con el servidor.';
     throw GraphQLFailure(linkMessage);
+  }
+
+  String? _extractGraphQLErrorMessage(GraphQLError error) {
+    final extensionMessage = _extractExtensionMessage(error.extensions);
+    if (extensionMessage != null && extensionMessage.trim().isNotEmpty) {
+      return extensionMessage;
+    }
+    return error.message;
+  }
+
+  String? _extractExtensionMessage(Map<String, dynamic>? extensions) {
+    if (extensions == null) return null;
+
+    final possibleKeys = ['message', 'messages', 'detail', 'details'];
+    for (final key in possibleKeys) {
+      final value = extensions[key];
+      if (value == null) continue;
+
+      if (value is String && value.trim().isNotEmpty) {
+        return value;
+      }
+
+      if (value is Iterable) {
+        final joined = value
+            .whereType<String>()
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .join('. ');
+        if (joined.isNotEmpty) {
+          return joined;
+        }
+      }
+    }
+
+    return null;
   }
 }
