@@ -6,6 +6,7 @@ import '../../providers/venta_provider.dart';
 import '../../utils/formatters.dart';
 import '../common/empty_view.dart';
 import '../common/loading_view.dart';
+import 'widgets/venta_qr_bottom_sheet.dart';
 
 class VentasProductorScreen extends StatefulWidget {
   const VentasProductorScreen({super.key});
@@ -124,9 +125,20 @@ class _VentasProductorScreenState extends State<VentasProductorScreen> {
                                 ),
                               ),
                             const SizedBox(height: 12),
-                            Text(
-                              'Detalle de productos',
-                              style: Theme.of(context).textTheme.titleMedium,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Detalle de productos',
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                if (!venta.estaSolicitada)
+                                  TextButton.icon(
+                                    onPressed: () => _showQr(context, venta),
+                                    icon: const Icon(Icons.qr_code_2),
+                                    label: const Text('Ver QR'),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 8),
                             ...venta.detalles.map(
@@ -154,6 +166,14 @@ class _VentasProductorScreenState extends State<VentasProductorScreen> {
       ),
     );
   }
+}
+
+void _showQr(BuildContext context, VentaModel venta) {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => VentaQrBottomSheet(venta: venta),
+    showDragHandle: true,
+  );
 }
 
 Color _statusColor(VentaModel venta) {
