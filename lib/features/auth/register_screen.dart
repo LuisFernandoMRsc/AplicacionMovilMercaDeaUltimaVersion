@@ -41,21 +41,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       telefono: _telefonoCtrl.text.trim(),
     );
 
-    final success = await auth.registrar(input);
-    if (!mounted) return;
+    try {
+      final success = await auth.registrar(input);
+      if (!mounted) return;
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Usuario creado. Ahora puedes iniciar sesión.'),
-        ),
-      );
-      Navigator.of(context).pop();
-    } else {
-      final message = auth.errorMessage ?? 'No fue posible registrar al usuario.';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      if (success) {
+        _showToast('Usuario creado. Ahora puedes iniciar sesión.');
+        Navigator.of(context).pop();
+      } else {
+        final message = auth.errorMessage ??
+            'No fue posible registrar al usuario. Envía este mensaje a soporte.';
+        _showToast(message);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      _showToast('Error inesperado: ${error.toString()}');
     }
+  }
+
+  void _showToast(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
