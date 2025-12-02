@@ -2,6 +2,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 
 import '../../core/graphql_service.dart';
 import '../../core/token_storage.dart';
+import '../models/productor.dart';
 import '../models/register_input.dart';
 import '../models/usuario.dart';
 
@@ -96,6 +97,79 @@ class AuthRepository {
     }
 
     return UsuarioProfile.fromJson(data);
+  }
+
+  Future<ProductorModel?> fetchProductorActual(String usuarioId) async {
+    const query = r'''
+      query MisDatosProductor {
+        productores {
+          id
+          idUsuario
+          nombreUsuario
+          direccion
+          nit
+          numeroCuenta
+          banco
+        }
+      }
+    ''';
+
+    final result = await _service.query(document: query);
+    final productores = result.data?['productores'] as List<dynamic>? ?? const [];
+
+    for (final raw in productores) {
+      final map = raw as Map<String, dynamic>;
+      if ((map['idUsuario'] as String?) == usuarioId) {
+        return ProductorModel.fromJson(map);
+      }
+    }
+
+    return null;
+  }
+
+  Future<ProductorModel> editarProductor({
+    String? nombreUsuario,
+    String? direccion,
+    String? nit,
+    String? numeroCuenta,
+    String? banco,
+  }) async {
+    final input = <String, dynamic>{};
+    if (nombreUsuario != null) input['nombreUsuario'] = nombreUsuario;
+    if (direccion != null) input['direccion'] = direccion;
+    if (nit != null) input['nit'] = nit;
+    if (numeroCuenta != null) input['numeroCuenta'] = numeroCuenta;
+    if (banco != null) input['banco'] = banco;
+
+    if (input.isEmpty) {
+      throw GraphQLFailure('No hay cambios para actualizar.');
+    }
+
+    const mutation = r'''
+      mutation EditarProductor($input: EditarProductorInput!) {
+        editarProductor(input: $input) {
+          id
+          idUsuario
+          nombreUsuario
+          direccion
+          nit
+          numeroCuenta
+          banco
+        }
+      }
+    ''';
+
+    final result = await _service.mutate(
+      document: mutation,
+      variables: {'input': input},
+    );
+
+    final data = result.data?['editarProductor'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw GraphQLFailure('No se pudo actualizar los datos de venta.');
+    }
+
+    return ProductorModel.fromJson(data);
   }
 
   Future<void> convertirEnProductor({

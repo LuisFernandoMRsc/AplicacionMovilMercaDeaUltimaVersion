@@ -11,9 +11,12 @@ import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/catalog_provider.dart';
 import 'providers/venta_provider.dart';
+import 'services/ambient_brightness_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await AmbientBrightnessService.instance.initialize();
 
   final tokenStorage = TokenStorage();
   final graphQLService = GraphQLService(tokenStorage: tokenStorage);

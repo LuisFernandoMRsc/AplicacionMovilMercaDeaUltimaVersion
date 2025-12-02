@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/graphql_service.dart';
+import '../data/models/productor.dart';
 import '../data/models/register_input.dart';
 import '../data/models/usuario.dart';
 import '../data/repositories/auth_repository.dart';
@@ -13,11 +14,13 @@ class AuthProvider extends ChangeNotifier {
   final AuthRepository _repository;
 
   UsuarioProfile? _perfil;
+  ProductorModel? _productor;
   bool _initializing = true;
   bool _loading = false;
   String? _error;
 
   UsuarioProfile? get perfil => _perfil;
+  ProductorModel? get productor => _productor;
   bool get isAuthenticated => _perfil != null;
   bool get isInitializing => _initializing;
   bool get isBusy => _loading;
@@ -27,8 +30,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final payload = await _repository.decodeToken();
       if (payload != null && payload['id'] != null) {
-        final perfil = await _repository.fetchPerfilActual(payload['id'] as String);
+        final userId = payload['id'] as String;
+        final perfil = await _repository.fetchPerfilActual(userId);
         _perfil = perfil;
+        await _loadProductor(userId);
       } else {
         await _repository.logout();
       }
@@ -50,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
         throw GraphQLFailure('Token inválido: falta el identificador.');
       }
       _perfil = await _repository.fetchPerfilActual(userId);
+      await _loadProductor(userId);
       _error = null;
       return true;
     } on GraphQLFailure catch (e) {
@@ -80,6 +86,7 @@ class AuthProvider extends ChangeNotifier {
       final userId = payload?['id'] as String?;
       if (userId == null) return;
       _perfil = await _repository.fetchPerfilActual(userId);
+      await _loadProductor(userId);
       notifyListeners();
     } on GraphQLFailure catch (e) {
       _error = e.message;
@@ -136,9 +143,64 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> actualizarDatosProductor({
+    String? nombreUsuario,
+    String? direccion,
+    String? nit,
+    String? numeroCuenta,
+    String? banco,
+  }) async {
+    if (!(_perfil?.esProductor ?? false)) {
+      _error = 'No eres productor.';
+      notifyListeners();
+      return false;
+    }
+
+    String? trimOrNull(String? value) {
+      final trimmed = value?.trim();
+      if (trimmed == null || trimmed.isEmpty) return null;
+      return trimmed;
+    }
+
+    final payload = <String, String?>{
+      'nombreUsuario': trimOrNull(nombreUsuario),
+      'direccion': trimOrNull(direccion),
+      'nit': trimOrNull(nit),
+      'numeroCuenta': trimOrNull(numeroCuenta),
+      'banco': trimOrNull(banco),
+    };
+
+    if (payload.values.every((value) => value == null)) {
+      _error = 'No hay cambios para guardar.';
+      notifyListeners();
+      return false;
+    }
+
+    _setLoading(true);
+    try {
+      final actualizado = await _repository.editarProductor(
+        nombreUsuario: payload['nombreUsuario'],
+        direccion: payload['direccion'],
+        nit: payload['nit'],
+        numeroCuenta: payload['numeroCuenta'],
+        banco: payload['banco'],
+      );
+      _productor = actualizado;
+      _error = null;
+      notifyListeners();
+      return true;
+    } on GraphQLFailure catch (e) {
+      _error = e.message;
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> logout() async {
     await _repository.logout();
     _perfil = null;
+    _productor = null;
     _error = null;
     notifyListeners();
   }
@@ -146,6 +208,18 @@ class AuthProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     _loading = value;
     notifyListeners();
+  }
+
+  Future<void> _loadProductor(String userId) async {
+    try {
+      if (_perfil?.esProductor ?? false) {
+        _productor = await _repository.fetchProductorActual(userId);
+      } else {
+        _productor = null;
+      }
+    } on GraphQLFailure catch (e) {
+      _error = e.message;
+    }
   }
 
   String _mapearErrorCredenciales(String message) {

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/venta_provider.dart';
+import '../../data/models/productor.dart';
 import '../../data/models/usuario.dart';
 import '../../utils/validators.dart';
 
@@ -83,6 +84,28 @@ class ProfileScreen extends StatelessWidget {
                 label: const Text('Editar datos'),
               ),
               const SizedBox(height: 16),
+              if (perfil.esProductor)
+                FilledButton.icon(
+                  onPressed: auth.isBusy
+                      ? null
+                      : () {
+                          final productor = auth.productor;
+                          if (productor == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'No se pudieron cargar tus datos de venta. Intenta actualizar.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          _showEditarDatosProductorSheet(context, productor);
+                        },
+                  icon: const Icon(Icons.receipt_long),
+                  label: const Text('Editar Datos de venta'),
+                ),
+              if (perfil.esProductor) const SizedBox(height: 16),
               if (!perfil.esProductor)
                 FilledButton.icon(
                   onPressed: auth.isBusy
@@ -225,6 +248,17 @@ class ProfileScreen extends StatelessWidget {
       },
     );
   }
+
+  void _showEditarDatosProductorSheet(
+    BuildContext context,
+    ProductorModel productor,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _EditarDatosProductorSheet(productor: productor),
+    );
+  }
 }
 
 class _EditarPerfilSheet extends StatefulWidget {
@@ -337,5 +371,134 @@ class _EditarPerfilSheetState extends State<_EditarPerfilSheet> {
         SnackBar(content: Text(message)),
       );
     }
+  }
+}
+
+class _EditarDatosProductorSheet extends StatefulWidget {
+  const _EditarDatosProductorSheet({required this.productor});
+
+  final ProductorModel productor;
+
+  @override
+  State<_EditarDatosProductorSheet> createState() => _EditarDatosProductorSheetState();
+}
+
+class _EditarDatosProductorSheetState extends State<_EditarDatosProductorSheet> {
+  late final TextEditingController _nombreCtrl;
+  late final TextEditingController _direccionCtrl;
+  late final TextEditingController _nitCtrl;
+  late final TextEditingController _cuentaCtrl;
+  late final TextEditingController _bancoCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _nombreCtrl = TextEditingController(text: widget.productor.nombreUsuario);
+    _direccionCtrl = TextEditingController(text: widget.productor.direccion);
+    _nitCtrl = TextEditingController(text: widget.productor.nit);
+    _cuentaCtrl = TextEditingController(text: widget.productor.numeroCuenta);
+    _bancoCtrl = TextEditingController(text: widget.productor.banco);
+  }
+
+  @override
+  void dispose() {
+    _nombreCtrl.dispose();
+    _direccionCtrl.dispose();
+    _nitCtrl.dispose();
+    _cuentaCtrl.dispose();
+    _bancoCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Editar datos de venta',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nombreCtrl,
+              decoration: const InputDecoration(labelText: 'Nombre público'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _direccionCtrl,
+              decoration: const InputDecoration(labelText: 'Dirección'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nitCtrl,
+              decoration: const InputDecoration(labelText: 'NIT'),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _cuentaCtrl,
+              decoration: const InputDecoration(labelText: 'Número de cuenta'),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _bancoCtrl,
+              decoration: const InputDecoration(labelText: 'Banco'),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Estos datos serán visibles para los compradores cuando concreten una venta.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: auth.isBusy
+                  ? null
+                  : () async {
+                      final ok = await auth.actualizarDatosProductor(
+                        nombreUsuario: _nombreCtrl.text,
+                        direccion: _direccionCtrl.text,
+                        nit: _nitCtrl.text,
+                        numeroCuenta: _cuentaCtrl.text,
+                        banco: _bancoCtrl.text,
+                      );
+                      if (!mounted) return;
+                      if (ok) {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Actualizaste tus datos de venta.'),
+                          ),
+                        );
+                      } else {
+                        final message = auth.errorMessage ??
+                            'No pudimos guardar los cambios.';
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(SnackBar(content: Text(message)));
+                      }
+                    },
+              icon: const Icon(Icons.save),
+              label: const Text('Guardar cambios'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
