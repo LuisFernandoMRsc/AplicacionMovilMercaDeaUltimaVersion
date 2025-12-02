@@ -67,7 +67,7 @@ class _MisProductosScreenState extends State<MisProductosScreen> {
     if (confirm != true) return;
 
     final catalog = context.read<CatalogProvider>();
-    final ok = await catalog.eliminarProducto(producto.nombre);
+    final ok = await catalog.eliminarProducto(producto.id);
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(

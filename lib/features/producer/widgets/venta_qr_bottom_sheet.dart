@@ -5,10 +5,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../data/models/venta.dart';
+import '../../../services/native_gallery_service.dart';
 
 class VentaQrBottomSheet extends StatefulWidget {
   const VentaQrBottomSheet({super.key, required this.venta});
@@ -22,6 +22,7 @@ class VentaQrBottomSheet extends StatefulWidget {
 class _VentaQrBottomSheetState extends State<VentaQrBottomSheet> {
   final GlobalKey _qrBoundaryKey = GlobalKey();
   bool _downloading = false;
+  final NativeGalleryService _galleryService = NativeGalleryService();
 
   String get _qrPayload => widget.venta.id;
 
@@ -30,50 +31,54 @@ class _VentaQrBottomSheetState extends State<VentaQrBottomSheet> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'QR de la venta',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: RepaintBoundary(
-                key: _qrBoundaryKey,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: QrImageView(
-                    data: _qrPayload,
-                    version: QrVersions.auto,
-                    size: 220,
-                    backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'QR de la venta',
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: RepaintBoundary(
+                  key: _qrBoundaryKey,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: QrImageView(
+                      data: _qrPayload,
+                      version: QrVersions.auto,
+                      size: 220,
+                      backgroundColor: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'ID: ${widget.venta.id}\nTransacción: ${widget.venta.numeroTransaccion.isEmpty ? 'No registrada' : widget.venta.numeroTransaccion}',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _downloading ? null : _saveQrToGallery,
-              icon: _downloading
+              const SizedBox(height: 12),
+              Text(
+                'ID: ${widget.venta.id}\nTransacción: ${widget.venta.numeroTransaccion.isEmpty ? 'No registrada' : widget.venta.numeroTransaccion}',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: _downloading ? null : _saveQrToGallery,
+                icon: _downloading
                   ? const SizedBox(
                       width: 18,
                       height: 18,
@@ -83,6 +88,7 @@ class _VentaQrBottomSheetState extends State<VentaQrBottomSheet> {
               label: Text(_downloading ? 'Guardando...' : 'Descargar QR'),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -120,30 +126,8 @@ class _VentaQrBottomSheetState extends State<VentaQrBottomSheet> {
       return null;
     }
 
-    Directory? targetDir;
-
-    if (Platform.isAndroid) {
-      targetDir = await getExternalStorageDirectory();
-    } else if (Platform.isIOS) {
-      targetDir = await getApplicationDocumentsDirectory();
-    } else {
-      targetDir = await getDownloadsDirectory();
-    }
-
-    if (targetDir == null) {
-      return null;
-    }
-
-    final folder = Directory('${targetDir.path}/qr_ventas');
-    if (!await folder.exists()) {
-      await folder.create(recursive: true);
-    }
-
     final fileName = 'venta_${widget.venta.id}_${DateTime.now().millisecondsSinceEpoch}.png';
-    final file = File('${folder.path}/$fileName');
-    await file.writeAsBytes(bytes, flush: true);
-
-    return file.path;
+    return _galleryService.saveImage(bytes, fileName);
   }
 
   Future<bool> _ensurePermissions() async {
@@ -152,12 +136,12 @@ class _VentaQrBottomSheetState extends State<VentaQrBottomSheet> {
       return status.isGranted;
     }
 
-    if (await Permission.storage.isGranted) {
-      return true;
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      return status.isGranted;
     }
 
-    final storageStatus = await Permission.storage.request();
-    return storageStatus.isGranted;
+    return true;
   }
 
   void _showMessage(String message) {

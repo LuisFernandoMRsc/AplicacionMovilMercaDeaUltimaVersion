@@ -69,10 +69,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ListView(
                   children: [
                     const SizedBox(height: 32),
-                    Text(
-                      'MercaDea',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
+                    Center(
+                      child: Image.asset(
+                        'assets/images/logo.jpeg',
+                        height: 120,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                     const SizedBox(height: 48),
                     TextFormField(

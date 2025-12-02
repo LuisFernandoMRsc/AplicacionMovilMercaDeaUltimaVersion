@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../core/graphql_service.dart';
@@ -10,6 +12,8 @@ class CatalogProvider extends ChangeNotifier {
   CatalogProvider(this._repository);
 
   final CatalogRepository _repository;
+  Timer? _autoRefreshTimer;
+  bool _autoRefreshStarted = false;
 
   List<Producto> _productos = const [];
   Map<String, ProductorModel> _productores = const <String, ProductorModel>{};
@@ -25,9 +29,14 @@ class CatalogProvider extends ChangeNotifier {
   String? get errorMessage => _error;
   String? get createError => _createError;
 
-  Future<void> loadCatalog({bool refresh = false}) async {
-    if (_productos.isNotEmpty && !refresh) return;
-    _setLoading(true);
+  Future<void> loadCatalog({bool refresh = false, bool silent = false}) async {
+    if (_productos.isNotEmpty && !refresh) {
+      _ensureAutoRefresh();
+      return;
+    }
+    if (!silent) {
+      _setLoading(true);
+    }
     try {
       final data = await _repository.fetchCatalog();
       _productos = data.productos;
@@ -38,7 +47,12 @@ class CatalogProvider extends ChangeNotifier {
     } on GraphQLFailure catch (e) {
       _error = e.message;
     } finally {
-      _setLoading(false);
+      if (!silent) {
+        _setLoading(false);
+      } else {
+        notifyListeners();
+      }
+      _ensureAutoRefresh();
     }
   }
 
@@ -74,11 +88,11 @@ class CatalogProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> eliminarProducto(String nombreProducto) async {
+  Future<bool> eliminarProducto(String productoId) async {
     _createError = null;
     notifyListeners();
     try {
-      final deleted = await _repository.eliminarProducto(nombreProducto);
+      final deleted = await _repository.eliminarProducto(productoId);
       if (deleted) {
         await loadCatalog(refresh: true);
       }
@@ -94,5 +108,20 @@ class CatalogProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     _loading = value;
     notifyListeners();
+  }
+
+  void _ensureAutoRefresh() {
+    if (_autoRefreshStarted) return;
+    _autoRefreshStarted = true;
+    _autoRefreshTimer =
+        Timer.periodic(const Duration(seconds: 30), (_) async {
+      await loadCatalog(refresh: true, silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
   }
 }

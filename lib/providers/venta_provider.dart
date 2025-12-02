@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../core/graphql_service.dart';
@@ -9,6 +11,10 @@ class VentaProvider extends ChangeNotifier {
   VentaProvider(this._ventaRepository);
 
   final VentaRepository _ventaRepository;
+  Timer? _autoRefreshTimer;
+  bool _autoRefreshStarted = false;
+  bool _ventasInitialized = false;
+  bool _ventasProductorInitialized = false;
 
   List<VentaModel> _ventas = const [];
   List<VentaModel> _ventasProductor = const [];
@@ -31,32 +37,59 @@ class VentaProvider extends ChangeNotifier {
     _errorProductor = null;
     _loading = false;
     _loadingProductor = false;
+    _ventasInitialized = false;
+    _ventasProductorInitialized = false;
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = null;
+    _autoRefreshStarted = false;
     notifyListeners();
   }
 
-  Future<void> loadVentas({bool refresh = false}) async {
-    if (_ventas.isNotEmpty && !refresh) return;
-    _setLoading(true);
+  Future<void> loadVentas({bool refresh = false, bool silent = false}) async {
+    _ventasInitialized = true;
+    if (_ventas.isNotEmpty && !refresh) {
+      _ensureAutoRefresh();
+      return;
+    }
+    if (!silent) {
+      _setLoading(true);
+    }
     try {
       _ventas = await _ventaRepository.fetchMisVentas();
       _error = null;
     } on GraphQLFailure catch (e) {
       _error = e.message;
     } finally {
-      _setLoading(false);
+      if (!silent) {
+        _setLoading(false);
+      } else {
+        notifyListeners();
+      }
+      _ensureAutoRefresh();
     }
   }
 
-  Future<void> loadVentasProductor({bool refresh = false}) async {
-    if (_ventasProductor.isNotEmpty && !refresh) return;
-    _setLoadingProductor(true);
+  Future<void> loadVentasProductor({bool refresh = false, bool silent = false}) async {
+    _ventasProductorInitialized = true;
+    if (_ventasProductor.isNotEmpty && !refresh) {
+      _ensureAutoRefresh();
+      return;
+    }
+    if (!silent) {
+      _setLoadingProductor(true);
+    }
     try {
       _ventasProductor = await _ventaRepository.fetchVentasProductor();
       _errorProductor = null;
     } on GraphQLFailure catch (e) {
       _errorProductor = e.message;
     } finally {
-      _setLoadingProductor(false);
+      if (!silent) {
+        _setLoadingProductor(false);
+      } else {
+        notifyListeners();
+      }
+      _ensureAutoRefresh();
     }
   }
 
@@ -123,5 +156,25 @@ class VentaProvider extends ChangeNotifier {
   void _setLoadingProductor(bool value) {
     _loadingProductor = value;
     notifyListeners();
+  }
+
+  void _ensureAutoRefresh() {
+    if (_autoRefreshStarted) return;
+    _autoRefreshStarted = true;
+    _autoRefreshTimer =
+        Timer.periodic(const Duration(seconds: 30), (_) async {
+      if (_ventasInitialized) {
+        await loadVentas(refresh: true, silent: true);
+      }
+      if (_ventasProductorInitialized) {
+        await loadVentasProductor(refresh: true, silent: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
   }
 }

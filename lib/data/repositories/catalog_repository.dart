@@ -141,16 +141,16 @@ class CatalogRepository {
     return Producto.fromJson(data);
   }
 
-  Future<bool> eliminarProducto(String nombreProducto) async {
+  Future<bool> eliminarProducto(String productoId) async {
     const mutation = r'''
-      mutation EliminarProducto($nombreProducto: String!) {
-        eliminarProducto(nombreProducto: $nombreProducto)
+      mutation EliminarProducto($productoId: String!) {
+        eliminarProducto(productoId: $productoId)
       }
     ''';
 
     final result = await _service.mutate(
       document: mutation,
-      variables: {'nombreProducto': nombreProducto},
+      variables: {'productoId': productoId},
     );
 
     final deleted = result.data?['eliminarProducto'] as bool?;
