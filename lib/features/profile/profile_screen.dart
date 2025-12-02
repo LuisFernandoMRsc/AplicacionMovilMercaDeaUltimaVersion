@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
@@ -42,6 +43,36 @@ class ProfileScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.phone),
                 title: Text(perfil.telefono.isEmpty ? 'Sin teléfono' : perfil.telefono),
+              ),
+              const SizedBox(height: 24),
+              Card(
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.support_agent, color: Color(0xFF160D4E)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Soporte MercaDea',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('Correo: soportemercadea@gmail.com'),
+                      const SizedBox(height: 4),
+                      const Text('Teléfono: 78507048'),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
@@ -124,11 +155,15 @@ class ProfileScreen extends StatelessWidget {
               TextField(
                 controller: nitCtrl,
                 decoration: const InputDecoration(labelText: 'NIT'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: numeroCuentaCtrl,
                 decoration: const InputDecoration(labelText: 'Número de cuenta'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               TextField(
@@ -246,12 +281,22 @@ class _EditarPerfilSheetState extends State<_EditarPerfilSheet> {
             TextFormField(
               controller: _nombreCtrl,
               decoration: const InputDecoration(labelText: 'Nombre'),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]"),
+                ),
+              ],
               validator: Validators.required,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _apellidoCtrl,
               decoration: const InputDecoration(labelText: 'Apellido'),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]"),
+                ),
+              ],
               validator: Validators.required,
             ),
             const SizedBox(height: 12),
@@ -259,6 +304,7 @@ class _EditarPerfilSheetState extends State<_EditarPerfilSheet> {
               controller: _telefonoCtrl,
               decoration: const InputDecoration(labelText: 'Teléfono'),
               keyboardType: TextInputType.phone,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 20),
             FilledButton.icon(

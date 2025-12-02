@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/register_input.dart';
@@ -83,6 +84,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: TextFormField(
                         controller: _nombreCtrl,
                         decoration: const InputDecoration(labelText: 'Nombre'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]"),
+                          ),
+                        ],
                         validator: (value) =>
                             value == null || value.isEmpty ? 'Requerido' : null,
                       ),
@@ -92,6 +98,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: TextFormField(
                         controller: _apellidoCtrl,
                         decoration: const InputDecoration(labelText: 'Apellido'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]"),
+                          ),
+                        ],
                         validator: (value) =>
                             value == null || value.isEmpty ? 'Requerido' : null,
                       ),
@@ -109,8 +120,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _telefonoCtrl,
-                  decoration: const InputDecoration(labelText: 'Teléfono'),
+                    decoration: const InputDecoration(labelText: 'Teléfono'),
                   keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (value) =>
                       value == null || value.isEmpty ? 'Ingresa tu teléfono' : null,
                 ),
