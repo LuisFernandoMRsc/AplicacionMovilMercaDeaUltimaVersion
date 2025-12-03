@@ -4,7 +4,7 @@ class GraphQLConfig {
   static String get endpoint {
     const rawEndpoint = String.fromEnvironment(
       'GRAPHQL_ENDPOINT',
-      defaultValue: 'http://10.0.2.2:5253/graphql',
+      defaultValue: 'https://a09a02ae1516.ngrok-free.app/graphql',
     );
     return rawEndpoint.trim();
   }

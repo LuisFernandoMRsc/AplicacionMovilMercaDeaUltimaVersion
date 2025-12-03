@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:graphql_flutter/graphql_flutter.dart';
 
 import '../config/graphql_config.dart';
@@ -83,6 +85,11 @@ class GraphQLService {
       throw GraphQLFailure('Error desconocido de GraphQL.');
     }
 
+    final linkException = exception.linkException;
+    if (_isConnectivityIssue(linkException)) {
+      throw GraphQLFailure('No tienes conexión a internet.');
+    }
+
     if (exception.graphqlErrors.isNotEmpty) {
       final messages = exception.graphqlErrors
           .map((error) => _extractGraphQLErrorMessage(error))
@@ -95,10 +102,25 @@ class GraphQLService {
       }
     }
 
-    final linkMessage = exception.linkException?.originalException?.toString() ??
-        exception.linkException?.toString() ??
+    final linkMessage = linkException?.originalException?.toString() ??
+        linkException?.toString() ??
         'No fue posible comunicarse con el servidor.';
     throw GraphQLFailure(linkMessage);
+  }
+
+  bool _isConnectivityIssue(LinkException? linkException) {
+    if (linkException == null) return false;
+    final original = linkException.originalException;
+    if (original is SocketException ||
+        original is HandshakeException ||
+        original is TlsException) {
+      return true;
+    }
+
+    final description = original?.toString() ?? linkException.toString();
+    return description.toLowerCase().contains('failed host lookup') ||
+        description.toLowerCase().contains('no address associated with hostname') ||
+        description.toLowerCase().contains('network is unreachable');
   }
 
   String? _extractGraphQLErrorMessage(GraphQLError error) {
